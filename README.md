@@ -202,7 +202,6 @@ This project is released under the [MIT License](LICENSE).
 ## Author
 
 **Sam Joseph**  
-Made with ❤️ using ESP32 + Arduino
 
 ---
 
