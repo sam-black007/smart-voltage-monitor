@@ -28,23 +28,7 @@ Smart Voltage Monitor Pro is an industrial-grade voltage monitoring system desig
 
 ## System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        ESP32 Controller                              │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐              │
-│  │   Voltage   │   │   Relay 1   │   │   Relay 2   │   Buzzer     │
-│  │   Sensor    │──▶│  Controller │   │  Controller │──▶  Alert    │
-│  │  (AC ZMPT)  │   │   (GPIO27)  │   │   (GPIO26)  │   (GPIO25)   │
-│  └─────────────┘   └─────────────┘   └─────────────┘              │
-│                                                                     │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐              │
-│  │    LCD      │   │    LED      │   │    WiFi     │              │
-│  │  Display    │   │  Indicators│   │   Server    │              │
-│  │  (I2C)      │   │  R/Y/G      │   │  (Web UI)   │              │
-│  └─────────────┘   └─────────────┘   └─────────────┘              │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![System Architecture](images/system_flowchart.png)
 
 ---
 
