@@ -1,28 +1,30 @@
-# Smart Voltage Monitor Pro
+# AC High Low Protecting System Using ESP32 with Webpage
 
-A professional ESP32-based voltage monitoring and protection system with real-time web dashboard, automatic relay control, and visual/audio alerts.
-
-![Project Status](https://img.shields.io/badge/Status-Active-brightgreen)
-![Platform](https://img.shields.io/badge/Platform-ESP32-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
+> A smart AC voltage protection system built on ESP32 that monitors mains voltage in real time, automatically disconnects the load during over-voltage or under-voltage conditions, and exposes a beautiful live web dashboard over WiFi.
 
 ---
 
-## Overview
+## Dashboard Preview
 
-Smart Voltage Monitor Pro is an industrial-grade voltage monitoring system designed to protect electrical equipment from voltage anomalies. The system continuously monitors AC voltage and automatically controls connected devices through relays when abnormal conditions are detected.
+The built-in web interface runs entirely on the ESP32 — no cloud, no app required.  
+Open any browser on the same WiFi network and navigate to the device IP address.
 
-### Key Features
+![Web Dashboard](images/web_dashboard.png)
 
-- **Real-time Voltage Monitoring** - Continuous AC voltage measurement with filtered readings
-- **Automatic Protection** - Auto-disconnect relays during under-voltage/over-voltage events
-- **Web Dashboard** - Modern, responsive web interface with live charts
-- **LCD Display** - Local 16x2 LCD showing voltage and status
-- **Audio Alerts** - Buzzer notifications for voltage anomalies
-- **LED Indicators** - Visual status indicators (Red/Yellow/Green)
-- **Configurable Thresholds** - Adjustable under-voltage, over-voltage, and no-AC detection limits
-- **Statistics Tracking** - Records peak voltage, minimum voltage, and event counts
-- **Manual Override** - Manual relay and buzzer control options
+---
+
+## Key Features
+
+- **Automatic Over-Voltage Protection** — disconnects load when voltage exceeds threshold (default: 240 V)  
+- **Automatic Under-Voltage Protection** — disconnects load when voltage drops below threshold (default: 180 V)  
+- **Dual Relay Output** — protect two independent loads simultaneously  
+- **3-Color LED Indicator** — Red (over), Yellow (under), Green (normal)  
+- **Audible Buzzer Alert** — with mute option via the web UI  
+- **16×2 I²C LCD Display** — shows live voltage and status without WiFi  
+- **Persistent Settings** — thresholds saved to ESP32 flash (NVS), survive reboot  
+- **Responsive Web Dashboard** — dark-mode, mobile-friendly, no external server needed  
+- **Test Lab (Simulation Mode)** — inject voltages, run wave patterns, one-shot sequences from the browser
+- **Demo Mode** — automated hardware cycle (all LEDs + relays + buzzer)
 
 ---
 
@@ -32,33 +34,44 @@ Smart Voltage Monitor Pro is an industrial-grade voltage monitoring system desig
 
 ---
 
-## Hardware Requirements
+## Hardware Required
 
-### Components
+| Component | Qty | Notes |
+|---|---|---|
+| ESP32 Dev Board | 1 | Any 30-pin or 38-pin variant |
+| ZMPT101B Voltage Sensor Module | 1 | Calibrated for AC mains |
+| 5V 2-Channel Relay Module | 1 | Active-LOW trigger |
+| 16×2 I²C LCD (0x27) | 1 | HD44780 + PCF8574 backpack |
+| Red LED | 1 | Over-voltage indicator |
+| Yellow LED | 1 | Under-voltage indicator |
+| Green LED | 1 | Normal / stable indicator |
+| Active Buzzer Module | 1 | Or passive buzzer with transistor driver |
+| BC547 NPN Transistors | 4 | Driver for LEDs and buzzer |
+| 220 Ω Resistors | 3 | LED current limiting |
+| 1 kΩ Resistors | 4 | Transistor base resistors |
+| 10 kΩ Resistor | 1 | ADC input bias for ZMPT101B |
+| 100 Ω Resistor | 1 | ADC input series resistor |
 
-| Component | Specification | Quantity |
-|-----------|---------------|----------|
-| ESP32 | Dev Module | 1 |
-| Voltage Sensor | ZMPT101B AC Voltage Sensor | 1 |
-| Relay Module | 5V 2-Channel Relay | 1 |
-| LCD Display | 16x2 I2C LCD | 1 |
-| Buzzer | Active Piezo Buzzer | 1 |
-| LEDs | Red, Yellow, Green | 3 |
-| Resistors | 220Ω (for LEDs) | 3 |
+---
 
-### Pin Configuration
+## Pin Connections
 
-| GPIO | Function |
-|------|----------|
-| 27 | Relay 1 (Channel 1) |
-| 26 | Relay 2 (Channel 2) |
-| 25 | Buzzer |
-| 13 | Red LED |
-| 12 | Yellow LED |
-| 14 | Green LED |
-| 34 | Voltage Sensor (Analog Input) |
-| 21 | I2C SDA (LCD) |
-| 22 | I2C SCL (LCD) |
+```
+ESP32 GPIO  →  Component
+────────────────────────────────
+GPIO 21     →  LCD SDA
+GPIO 22     →  LCD SCL
+GPIO 34     →  ZMPT101B OUT  (via 100 Ω series + 10 kΩ to GND)
+GPIO 27     →  Relay Module IN1
+GPIO 26     →  Relay Module IN2
+GPIO 25     →  BC547 Base (1 kΩ) → Buzzer collector
+GPIO 13     →  BC547 Base (1 kΩ) → Red LED (220 Ω) collector
+GPIO 12     →  BC547 Base (1 kΩ) → Yellow LED (220 Ω) collector
+GPIO 14     →  BC547 Base (1 kΩ) → Green LED (220 Ω) collector
+3.3 V       →  ZMPT101B VCC, LCD VCC (via I²C backpack)
+5 V         →  Relay VCC
+GND         →  Common GND
+```
 
 ---
 
@@ -68,107 +81,90 @@ Smart Voltage Monitor Pro is an industrial-grade voltage monitoring system desig
 
 ---
 
-## System Flowchart
-
-![System Flowchart](images/system_flowchart.png)
-
----
-
-## Web Dashboard
-
-The built-in web server provides a professional dashboard with:
-
-- **Live Voltage Display** - Real-time voltage reading with color-coded status
-- **Voltage Chart** - Historical voltage graph with threshold lines
-- **Relay Control** - Individual and batch control of relays (Auto/On/Off)
-- **Statistics Panel** - Peak, average, and minimum voltage readings
-- **Event Counter** - Track normal, under-voltage, and over-voltage events
-- **Settings Panel** - Configure thresholds and reset statistics
-- **System Info** - WiFi signal, uptime, memory usage
-
-![Web Dashboard](images/web_dashboard.png)
-
----
-
-## Installation
+## Software Setup
 
 ### Prerequisites
 
-- Arduino IDE or PlatformIO
-- ESP32 board support installed
-- Required libraries:
-  - `Wire.h` (built-in)
-  - `LiquidCrystal_I2C`
-  - `EmonLib`
-  - `WiFi.h` (built-in)
-  - `WebServer.h` (built-in)
-  - `Preferences.h` (built-in)
+- [Arduino IDE 2.x](https://www.arduino.cc/en/software) or [PlatformIO](https://platformio.org/)
+- ESP32 Board Support Package installed  
+  *(File → Preferences → Board Manager URL: `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`)*
 
-### Steps
+### Required Libraries
 
-1. **Install ESP32 Board Support**
-   - Open Arduino IDE → Preferences → Additional Board Manager URLs
-   - Add: `https://dl.espressif.com/dl/package_esp32_index.json`
-   - Tools → Board → ESP32 → ESP32 Dev Module
+Install all via **Sketch → Include Library → Manage Libraries**:
 
-2. **Install Required Libraries**
-   - Library Manager → Search and install:
-     - `LiquidCrystal_I2C` by Frank de Brabander
-     - `EmonLib` by OpenEnergyMonitor
+| Library | Author |
+|---|---|
+| `EmonLib` | OpenEnergyMonitor |
+| `LiquidCrystal I2C` | Frank de Brabander |
 
-3. **Configure WiFi Credentials**
-   ```cpp
-   const char* ssid     = "YourNetworkName";
-   const char* password = "YourPassword";
-   ```
+`Wire.h`, `WiFi.h`, `WebServer.h`, and `Preferences.h` are all included with the ESP32 core.
 
-4. **Upload the Code**
-   - Select correct COM port
-   - Upload sketch
+### Configuration
 
----
+Open `smart_helmet.ino` and edit the WiFi credentials:
 
-## Configuration
+```cpp
+const char* ssid     = "YOUR_WIFI_NAME";
+const char* password = "YOUR_WIFI_PASSWORD";
+```
 
-### Default Thresholds
+### Upload
 
-| Parameter | Default Value | Range |
-|-----------|---------------|-------|
-| Under Voltage | 180V | 100-200V |
-| Over Voltage | 240V | 220-280V |
-| No AC Detection | 80V | 10-100V |
-
-### Changing Thresholds
-
-1. Access the web dashboard
-2. Navigate to **Settings** tab
-3. Enter new threshold values
-4. Click **SAVE SETTINGS**
+1. Connect your ESP32 via USB
+2. Select the correct board and port in Arduino IDE
+3. Click **Upload**
+4. Open **Serial Monitor** at 115200 baud
+5. Note the IP address printed
+6. Navigate to that IP in any browser on the same WiFi network
 
 ---
 
-## Usage Guide
+## Web API Endpoints
 
-### Status Indicators
+| Endpoint | Description |
+|---|---|
+| `/` | Main web dashboard |
+| `/livedata` | JSON: voltage, status, relay states, alerts |
+| `/histdata` | JSON: last 60 voltage readings for the chart |
+| `/r1on` `/r1off` `/r1auto` | Relay 1 manual control |
+| `/r2on` `/r2off` `/r2auto` | Relay 2 manual control |
+| `/bothon` `/bothoff` `/bothauto` | Both relays at once |
+| `/buzzeron` `/buzzeroff` `/buzzermute` | Buzzer control |
+| `/savesettings?under=180&over=240` | Save threshold settings |
+| `/simon?v=220` | Simulation mode — inject voltage |
+| `/simoff` | Return to live sensor |
+| `/demoon` `/demooff` `/demostep` | Demo mode control |
+| `/resetstats` `/resetpeak` | Reset counters / peak values |
 
-| LED Color | Status |
-|-----------|--------|
-| Green | Normal voltage (180V - 240V) |
-| Yellow | Under voltage (< 180V) |
-| Red | Over voltage (> 240V) |
-| Off | No AC connected |
+---
 
-### Relay Modes
+## How It Works
 
-- **Auto**: Relay automatically turns off during voltage anomalies
-- **On**: Relay always stays on (manual override)
-- **Off**: Relay always stays off (manual override)
+```
+ZMPT101B → ADC GPIO34 → EmonLib (calcVI) → Filtered Voltage
+                                              │
+                            ┌─────────────────┤
+                            │                 │
+                         Normal              Fault (over/under)
+                            │                 │
+                      Green LED ON          Relay trips (load off)
+                      Relays stay ON        Red or Yellow LED ON
+                                            Buzzer sounds
+                                            Alert logged
+```
 
-### Accessing Web Dashboard
+The ESP32 main loop reads voltage every second, applies a 70/30 low-pass filter for stability, and updates the LCD, LEDs, relays, and buzzer accordingly.
 
-1. Connect to the same WiFi network
-2. Find the ESP32 IP address (shown on LCD)
-3. Open browser: `http://<ESP32_IP_ADDRESS>`
+---
+
+## Safety Warning
+
+> **This project deals with mains AC voltage (110 V / 220 V), which is lethal.**  
+> Ensure all high-voltage wiring is done by a qualified person.  
+> Use appropriate enclosures, insulation, and circuit breakers.  
+> The sensor module (ZMPT101B) provides isolation from mains — do not bypass it.  
+> This project is for educational and hobbyist use only.
 
 ---
 
@@ -176,84 +172,38 @@ The built-in web server provides a professional dashboard with:
 
 ```
 smart_helmet/
-├── smart_helmet.ino      # Main Arduino sketch
-├── images/
-│   ├── circuit_diagram.png   # Hardware connection diagram
-│   ├── system_flowchart.png  # Operation flowchart
-│   └── web_dashboard.png     # Dashboard screenshot
-└── README.md            # This file
+├── smart_helmet.ino     # Main Arduino sketch (ESP32)
+├── README.md            # This file
+├── LICENSE              # MIT License
+├── .gitignore           # Arduino / build artifacts
+└── images/
+    ├── circuit_diagram.png   # Hardware connection diagram
+    ├── system_flowchart.png  # Operation flowchart
+    └── web_dashboard.png     # Dashboard screenshot
 ```
 
 ---
 
-## Technical Details
+## Roadmap
 
-### Voltage Measurement
-
-- Uses ZMPT101B AC voltage sensor
-- ADC reading with emonLib calibration
-- Exponential moving average filtering (70% old + 30% new)
-- Sampling: 20 cycles, 2000ms timeout
-
-### Data Storage
-
-- Threshold settings saved to ESP32 flash memory
-- Persistent across power cycles
-
-### Web Server
-
-- Built-in ESP32 WebServer on port 80
-- RESTful API endpoint `/livedata` for JSON data
-- Auto-refresh every 1 second
-- Chart.js for voltage history visualization
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| WiFi not connecting | Verify SSID and password, check signal strength |
-| Voltage reading inaccurate | Adjust calibration in `emon.voltage()` function |
-| LCD not displaying | Check I2C address (default 0x27), verify wiring |
-| Relays not working | Verify GPIO connections, check relay module power |
-
----
-
-## Future Enhancements
-
-- [ ] OTA (Over-the-Air) firmware updates
-- [ ] MQTT integration for IoT platforms
-- [ ] Email/SMS alerts
-- [ ] Data logging to SD card
-- [ ] Mobile app support
-- [ ] Cloud dashboard
+- [ ] Add OTA (Over-The-Air) firmware updates
+- [ ] Email/Telegram alert on fault condition
+- [ ] Data logging to SD card or Google Sheets
+- [ ] MQTT integration (Home Assistant / Node-RED)
 
 ---
 
 ## License
 
-This project is open source and available under the MIT License.
+This project is released under the [MIT License](LICENSE).
 
 ---
 
 ## Author
 
-**SAM** 
-- Project: Smart Voltage Monitor Pro
-- Platform: ESP32
-- Version: 1.0.0
+**Sam Joseph**  
+Made with ❤️ using ESP32 + Arduino
 
 ---
 
-## Acknowledgments
-
-- [EmonLib](https://github.com/openenergymonitor/EmonLib) - Energy monitoring library
-- [ESP32 WebServer](https://github.com/espressif/arduino-esp32) - Web server implementation
-- [Chart.js](https://www.chartjs.org/) - Beautiful charts for the web
-
----
-
-*For technical support and questions, please refer to the project documentation.*
+*Built for real-world AC protection. Open source. No cloud required.*
