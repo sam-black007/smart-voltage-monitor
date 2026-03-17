@@ -1,0 +1,10 @@
+# Arduino
+*.ino.hex
+*.bin
+*.elf
+*.map
+build/
+libraries/
+.vscode/
+.DS_Store
+*.log
