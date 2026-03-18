@@ -102,7 +102,7 @@ Install all via **Sketch → Include Library → Manage Libraries**:
 
 ### Configuration
 
-Open `smart_helmet.ino` and edit the WiFi credentials:
+Open `voltage_monitor.ino` and edit the WiFi credentials:
 
 ```cpp
 const char* ssid     = "YOUR_WIFI_NAME";
@@ -171,15 +171,15 @@ The ESP32 main loop reads voltage every second, applies a 70/30 low-pass filter 
 ## Project Structure
 
 ```
-smart_helmet/
-├── smart_helmet.ino     # Main Arduino sketch (ESP32)
-├── README.md            # This file
-├── LICENSE              # MIT License
-├── .gitignore           # Arduino / build artifacts
+esp32-voltage-monitor/
+├── voltage_monitor.ino     # Main Arduino sketch (ESP32)
+├── README.md                # This file
+├── LICENSE                  # MIT License
+├── .gitignore               # Arduino / build artifacts
 └── images/
     ├── circuit_diagram.png   # Hardware connection diagram
-    ├── system_flowchart.png  # Operation flowchart
-    └── web_dashboard.png     # Dashboard screenshot
+    ├── system_flowchart.png # Operation flowchart
+    └── web_dashboard.png    # Dashboard screenshot
 ```
 
 ---
