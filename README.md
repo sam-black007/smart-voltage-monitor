@@ -1,8 +1,44 @@
-# AC High Low Protecting System Using ESP32 with Webpage
+﻿# AC High Low Protecting System Using ESP32 with Webpage
 
 > A smart AC voltage protection system built on ESP32 that monitors mains voltage in real time, automatically disconnects the load during over-voltage or under-voltage conditions, and exposes a beautiful live web dashboard over WiFi.
 
+This repo contains **two separate versions** of the system:
+
+| | [ESP32 + Web Dashboard](#esp32-version) | [Arduino Nano Standalone](#arduino-nano-version) |
+|---|---|---|
+| Board | ESP32 (WiFi) | Arduino Nano / UNO |
+| Display | 16×2 I²C LCD + browser dashboard | 16×2 I²C LCD |
+| Control | Web UI + automatic | Automatic only |
+| Code | [`voltage_monitor.ino`](voltage_monitor.ino) | [`arduino_nano/over_under_voltage_protection.ino`](arduino_nano/over_under_voltage_protection.ino) |
+
 ---
+
+## Project Demo
+
+![Project Demo](images/project_demo.jpg)
+
+### Demo Video
+
+<video controls src="images/project_demo.mp4" style="max-width:100%;" poster="images/project_demo.jpg">
+  Your browser does not support the video tag.
+  <a href="images/project_demo.mp4">Download the demo video</a>
+</video>
+
+---
+
+## Reference
+
+This project is based on the **Overvoltage And Undervoltage Protection System** reference design:
+
+- Full tutorial & guide: [circuitdiagrams.in — Overvoltage And Undervoltage Protection System Using Arduino](https://circuitdiagrams.in/overvoltage-and-undervoltage-protection-system/)
+- Uses the **ZMPT101B** voltage sensor with **EmonLib** for accurate RMS measurement
+- Trips a relay (isolating the load) when voltage falls below **180 V** or rises above **240 V**
+
+---
+
+# ESP32 Version
+
+> Smart monitor with live web dashboard, dual relay output, simulation demo mode, and persisted settings.
 
 ## Dashboard Preview
 
@@ -34,7 +70,7 @@ Open any browser on the same WiFi network and navigate to the device IP address.
 
 ---
 
-## Hardware Required
+## Hardware Required (ESP32)
 
 | Component | Qty | Notes |
 |---|---|---|
@@ -54,7 +90,7 @@ Open any browser on the same WiFi network and navigate to the device IP address.
 
 ---
 
-## Pin Connections
+## Pin Connections (ESP32)
 
 ```
 ESP32 GPIO  →  Component
@@ -68,9 +104,9 @@ GPIO 25     →  BC547 Base (1 kΩ) → Buzzer collector
 GPIO 13     →  BC547 Base (1 kΩ) → Red LED (220 Ω) collector
 GPIO 12     →  BC547 Base (1 kΩ) → Yellow LED (220 Ω) collector
 GPIO 14     →  BC547 Base (1 kΩ) → Green LED (220 Ω) collector
-3.3 V       →  ZMPT101B VCC, LCD VCC (via I²C backpack)
-5 V         →  Relay VCC
-GND         →  Common GND
+3.3 V   →  ADC sensor VCC, LCD VCC (via I²C backpack)
+5 V     →  Relay VCC
+GND     →  Shared Ground
 ```
 
 ---
@@ -81,13 +117,7 @@ GND         →  Common GND
 
 ---
 
-## Software Setup
-
-### Prerequisites
-
-- [Arduino IDE 2.x](https://www.arduino.cc/en/software) or [PlatformIO](https://platformio.org/)
-- ESP32 Board Support Package installed  
-  *(File → Preferences → Board Manager URL: `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`)*
+## Software Setup (ESP32)
 
 ### Required Libraries
 
@@ -98,7 +128,7 @@ Install all via **Sketch → Include Library → Manage Libraries**:
 | `EmonLib` | OpenEnergyMonitor |
 | `LiquidCrystal I2C` | Frank de Brabander |
 
-`Wire.h`, `WiFi.h`, `WebServer.h`, and `Preferences.h` are all included with the ESP32 core.
+`WiFi.h`, `WebServer.h`, and `Preferences.h` are all included with the ESP32 core.
 
 ### Configuration
 
@@ -113,7 +143,7 @@ const char* password = "YOUR_WIFI_PASSWORD";
 
 1. Connect your ESP32 via USB
 2. Select the correct board and port in Arduino IDE
-3. Click **Upload**
+3. Click **Upload** (sketch is in [`voltage_monitor.ino`](voltage_monitor.ino))
 4. Open **Serial Monitor** at 115200 baud
 5. Note the IP address printed
 6. Navigate to that IP in any browser on the same WiFi network
@@ -131,30 +161,59 @@ const char* password = "YOUR_WIFI_PASSWORD";
 | `/r2on` `/r2off` `/r2auto` | Relay 2 manual control |
 | `/bothon` `/bothoff` `/bothauto` | Both relays at once |
 | `/buzzeron` `/buzzeroff` `/buzzermute` | Buzzer control |
-| `/savesettings?under=180&over=240` | Save threshold settings |
-| `/simon?v=220` | Simulation mode — inject voltage |
-| `/simoff` | Return to live sensor |
-| `/demoon` `/demooff` `/demostep` | Demo mode control |
-| `/resetstats` `/resetpeak` | Reset counters / peak values |
+| `/savesettings?under=180&over=240` | Save thresholds settings |
 
 ---
 
-## How It Works
+# Arduino Nano Version
+
+> A standalone low-cost Overvoltage And Undervoltage Protection System for Arduino Nano / UNO, built with the ZMPT101B sensor and EmonLib.
+
+This is the classic Arduino-only design from the reference article. It detects any AC voltage below **180 V** or above **240 V**, trips the relay to disconnect the load from mains, shows live voltage on an I²C LCD, and drives a buzzer + LED warning during fault conditions.
+
+## Key Features
+
+- **Automatic load disconnection** on over / under voltage
+- **Live RMS voltage display** on 16×2 I²C LCD
+- **Buzzer + LED** warning during under / over voltage
+- **Low cost** — Arduino + ZMPT101B sensor + relay
+- **Calibration support** for accurate mains readings
+
+## Hardware Required (Arduino)
+
+| Component | Qty | Notes |
+|---|---|---|
+| Arduino Nano / UNO| 1 | |
+| ZMPT101B Voltage Sensor | 1 | Or 9V AC transformer + divider |
+| 5V Relay Module | 1 | Active-LOW trigger |
+| 16×2 I²C LCD (0x27) | 1 | Runs the display |
+| Buzzer | 1 | Optional |
+| 5V LED | 1 | Optional warning lamp |
+| Wires | – | |
+
+## Pin Connections (Arduino)
 
 ```
-ZMPT101B → ADC GPIO34 → EmonLib (calcVI) → Filtered Voltage
-                                              │
-                            ┌─────────────────┤
-                            │                 │
-                         Normal              Fault (over/under)
-                            │                 │
-                      Green LED ON          Relay trips (load off)
-                      Relays stay ON        Red or Yellow LED ON
-                                            Buzzer sounds
-                                            Alert logged
+Arduino pin     →  Component
+─────────────────────────────────
+A0 (Nano)       →  Sensor OUT
+D10 (Nano)      →  Relay IN
+D9              →  Buzzer (+)
+D8              →  LED anode (via 220 Ω)
+SDA/SCL (A4/A5) →  LCD I²C
+5 V             →  Module VCC
+GND             →  Shared GND
 ```
 
-The ESP32 main loop reads voltage every second, applies a 70/30 low-pass filter for stability, and updates the LCD, LEDs, relays, and buzzer accordingly.
+## Uploading
+
+The Arduino Nano sketch is [`arduino_nano/over_under_voltage_protection.ino`](arduino_nano/over_under_voltage_protection.ino).
+
+Calibration method for voltage:
+
+- Upload the sketch and open **Serial Plotter** (Tools → Serial Plotter) at 9600 baud
+- Adjust the trimmer on the circuit board until a clean sinusoidal-like waveform appears
+- Trim `emon.voltage(A0, 234.0, 1.7)` — the `234.0` is your reference supply voltage and `1.7` the calibration constant; tweak them for accurate RMS readings.
 
 ---
 
@@ -163,7 +222,7 @@ The ESP32 main loop reads voltage every second, applies a 70/30 low-pass filter 
 > **This project deals with mains AC voltage (110 V / 220 V), which is lethal.**  
 > Ensure all high-voltage wiring is done by a qualified person.  
 > Use appropriate enclosures, insulation, and circuit breakers.  
-> The sensor module (ZMPT101B) provides isolation from mains — do not bypass it.  
+> The sensor module (ZMPT101B etc.) provides isolation from mains — do not bypass it.  
 > This project is for educational and hobbyist use only.
 
 ---
@@ -171,25 +230,19 @@ The ESP32 main loop reads voltage every second, applies a 70/30 low-pass filter 
 ## Project Structure
 
 ```
-esp32-voltage-monitor/
-├── voltage_monitor.ino     # Main Arduino sketch (ESP32)
-├── README.md                # This file
-├── LICENSE                  # MIT License
-├── .gitignore               # Arduino / build artifacts
+smart-voltage-monitor/
+├── voltage_monitor.ino            # ESP32 sketch (WiFi + Web dashboard)
+├── arduino_nano/
+│   └── over_under_voltage_protection.ino   # Arduino Nano standalone code
+├── README.md
+├── .gitignore
 └── images/
-    ├── circuit_diagram.png   # Hardware connection diagram
-    ├── system_flowchart.png # Operation flowchart
-    └── web_dashboard.png    # Dashboard screenshot
+    ├── circuit_diagram.png
+    ├── system_flowchart.png
+    ├── web_dashboard.png
+    ├── project_demo.jpg          # Project photo
+    └── project_demo.mp4         # Demo video
 ```
-
----
-
-## Roadmap
-
-- [ ] Add OTA (Over-The-Air) firmware updates
-- [ ] Email/Telegram alert on fault condition
-- [ ] Data logging to SD card or Google Sheets
-- [ ] MQTT integration (Home Assistant / Node-RED)
 
 ---
 
@@ -201,7 +254,7 @@ This project is released under the [MIT License](LICENSE).
 
 ## Author
 
-**Sam Joseph**  
+**Sam Joseph**
 
 ---
 
