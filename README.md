@@ -23,10 +23,13 @@ This repo contains **two separate versions** of the system:
 
 ### Demo Video
 
+📁 **File:** [`images/project_demo.mp4`](images/project_demo.mp4)
+
 <video controls src="images/project_demo.mp4" style="max-width:100%;" poster="images/project_demo.jpg">
   Your browser does not support the video tag.
-  <a href="images/project_demo.mp4">Download the demo video</a>
 </video>
+
+[⬇️ Download the demo video](images/project_demo.mp4)
 
 ---
 
@@ -218,6 +221,76 @@ Calibration method for voltage:
 - Upload the sketch and open **Serial Plotter** (Tools → Serial Plotter) at 9600 baud
 - Adjust the trimmer on the circuit board until a clean sinusoidal-like waveform appears
 - Trim `emon.voltage(A0, 234.0, 1.7)` — the `234.0` is your reference supply voltage and `1.7` the calibration constant; tweak them for accurate RMS readings.
+
+## Arduino Code
+
+```cpp
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <EmonLib.h>  // EmonLib for voltage measurement
+
+const int relay = 10;    // Relay connected to pin 10
+const int buzzer = 9;    // Buzzer connected to pin 9
+const int warningLED = 8; // LED connected to pin 8
+
+EnergyMonitor emon;
+float current_Volts;
+unsigned long printPeriod = 1000;
+unsigned long previousMillis = 0;
+LiquidCrystal_I2C lcd(0x27, 20, 4);  // I2C LCD: 20x4
+
+void setup() {
+  lcd.init();
+  lcd.backlight();
+  pinMode(relay, OUTPUT);
+  pinMode(buzzer, OUTPUT);
+  pinMode(warningLED, OUTPUT);
+  digitalWrite(buzzer, LOW);
+  digitalWrite(warningLED, LOW);
+  emon.voltage(A0, 234.0, 1.7);  // Calibration: adjust if needed
+  lcd.setCursor(0, 0);
+  lcd.print("Voltage Monitor");
+  delay(2000);
+  lcd.setCursor(0, 1);
+  lcd.print("Under:180V Over:240V");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+  emon.calcVI(20, 2000);       // Sample voltage
+  current_Volts = emon.Vrms;   // Read RMS voltage
+  if (millis() - previousMillis >= printPeriod) {
+    previousMillis = millis();
+    lcd.setCursor(0, 0);
+    lcd.print("Voltage: ");
+    lcd.print(current_Volts, 1);
+    lcd.print(" V     ");
+
+    if (current_Volts < 180) {
+      lcd.setCursor(0, 1);
+      lcd.print("Status: Under Volt ");
+      digitalWrite(relay, LOW);
+      digitalWrite(buzzer, HIGH);
+      digitalWrite(warningLED, HIGH);
+    } else if (current_Volts > 240) {
+      lcd.setCursor(0, 1);
+      lcd.print("Status: Over Volt  ");
+      digitalWrite(relay, LOW);
+      digitalWrite(buzzer, HIGH);
+      digitalWrite(warningLED, HIGH);
+    } else {
+      lcd.setCursor(0, 1);
+      lcd.print("Status: Normal     ");
+      digitalWrite(relay, HIGH);
+      digitalWrite(buzzer, LOW);
+      digitalWrite(warningLED, LOW);
+    }
+  }
+}
+```
+
+> Full file: [`arduino_nano/over_under_voltage_protection.ino`](arduino_nano/over_under_voltage_protection.ino)
 
 ---
 
