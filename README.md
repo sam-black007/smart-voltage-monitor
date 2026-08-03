@@ -17,6 +17,10 @@ This repo contains **two separate versions** of the system:
 
 ![Project Demo](images/project_demo.jpg)
 
+### Test Setup
+
+![Test Setup](images/test_setup.jpg)
+
 ### Demo Video
 
 <video controls src="images/project_demo.mp4" style="max-width:100%;" poster="images/project_demo.jpg">
@@ -241,6 +245,7 @@ smart-voltage-monitor/
     ├── system_flowchart.png
     ├── web_dashboard.png
     ├── project_demo.jpg          # Project photo
+    ├── test_setup.jpg           # Test setup photo
     └── project_demo.mp4         # Demo video
 ```
 
